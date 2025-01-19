@@ -1,0 +1,39 @@
+dep:
+  #_ utilities 
+  - react-native-get-random-values
+  - axios
+  - uuid
+  - zustand
+  - immer
+
+  #_ Navigation
+  - "@react-navigation/native-stack"
+  - react-native-screens
+  - react-native-safe-area-context
+
+  #_ UI
+  - react-native-linear-gradient
+  - lucide-react-native
+  - react-native-reanimated
+  - react-native-responsive-fontsize
+  - react-native-svg
+  - react-native-svg-transformer
+  - react-native-vector-icons
+  - nativewind 
+  - tailwindcss
+
+
+  #_ Native
+  - react-native-gesture-handler
+  - react-native-permissions
+  - react-native-device-info
+
+  #_ Database
+  - react-native-mmkv
+
+  #_ Project specific
+  - react-native-webrtc
+  - socket.io-client
+
+dev:
+  - "@types/react-native-vector-icons"

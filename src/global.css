@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .container{
+        @apply bg-white flex-1 justify-center items-center;
+    }
+}
