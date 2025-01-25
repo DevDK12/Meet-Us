@@ -4,7 +4,7 @@
 
 @layer utilities {
     .container{
-        @apply bg-white flex-1;
+        @apply bg-white flex-1 p-[10px];
     }
 
 }
