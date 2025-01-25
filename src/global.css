@@ -4,6 +4,7 @@
 
 @layer utilities {
     .container{
-        @apply bg-white flex-1 justify-center items-center;
+        @apply bg-white flex-1;
     }
+
 }

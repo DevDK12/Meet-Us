@@ -1,9 +1,9 @@
 import "./src/global.css";
-import SplashScreen from "./src/screens/SplashScreen";
+import Navigation from "./src/navigation/Navigation";
 
 const App = () => {
   return (
-    <SplashScreen />
+    <Navigation />
   )
 }
 export default App
