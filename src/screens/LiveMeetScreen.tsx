@@ -22,7 +22,7 @@ const LiveMeetScreen = () => {
                 onLayout={onContainerLayout}
             >
                 {
-                    containerDimensions && peopleData.length === 0 ?
+                    peopleData.length > 0 ?
                         (
                             <PeoplesContainer
                                 people={peopleData}

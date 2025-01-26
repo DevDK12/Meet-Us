@@ -10,7 +10,7 @@ export const user = {
   speaking: true,
   micOn: false,
   videoOn: true,
-  photo: getRandomImage('men'),
+  // photo: getRandomImage('men'),
 };
 
 export const peopleData = [
