@@ -20,7 +20,7 @@
     "clean-rncli": "rmdir /s /q %TEMP%\\react-native-cli",
     "clean-jest": "rmdir /s /q %TEMP%\\haste-map-*",
     "clean-watchman": "watchman watch-del-all",
-    "reset-cache": "react-native start -- --reset-cache",
+    "reset-cache": "npx react-native start --reset-cache",
     "clean-android": "npm run clean-npm && npm run clean-metro",
     "clean-ios": "npm run clean-npm && npm run clean-watchman && npm run clean-jest && npm run clean-metro",
     "pod-install": "cd ios && RCT_NEW_ARCH_ENABLED=1 bundle exec pod install",

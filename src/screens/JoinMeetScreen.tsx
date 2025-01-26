@@ -7,6 +7,7 @@ import CustomText from '../components/ui/CustomText'
 import LinearGradient from 'react-native-linear-gradient';
 import { Text } from 'react-native'
 import { useState } from 'react'
+import AppBar from '../components/ui/AppBar'
 
 const JoinMeetScreen = () => {
 
@@ -20,24 +21,9 @@ const JoinMeetScreen = () => {
         <View className='flex-1 p-4 bg-white'>
             <SafeAreaView />
 
-            <View className='flex-row justify-between items-center py-1'>
-                <ChevronLeft
-                    size={RFValue(18)}
-                    onPress={() => goBack()}
-                    color={Colors.text}
-                />
-                <CustomText
-                    fontSize={15}
-                    fontFamily='Roboto-Medium'
-                    style={{ opacity: 0.8 }}
-                >
-                    Join Meet
-                </CustomText>
-                <EllipsisVertical
-                    size={RFValue(18)}
-                    color={Colors.text}
-                />
-            </View>
+            <AppBar
+                title='Join Meet'
+            />
 
             <LinearGradient
                 colors={['#007AFF', '#a6cbff']}
