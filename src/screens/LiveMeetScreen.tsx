@@ -1,8 +1,42 @@
-import { View, Text } from 'react-native'
+import { View } from 'react-native'
+import MeetHeader from '../components/meet/MeetHeader'
+import MeetFooter from '../components/meet/MeetFooter';
+import { useContainerDimensions } from '../hooks/useContainerDimensions';
+import EmptyMeetContainer from '../components/meet/EmptyMeetContainer';
+import { peopleData } from '../utils/dummyData';
+import PeoplesContainer from '../components/meet/PeoplesContainer';
+
+
 const LiveMeetScreen = () => {
+
+    const { containerDimensions, onContainerLayout } = useContainerDimensions();
+
     return (
-        <View>
-            <Text>LiveMeetScreen</Text>
+        <View className='flex-1 bg-[#121212]'>
+            <MeetHeader
+                switchCamera={() => { }}
+            />
+
+            <View
+                className='flex-1'
+                onLayout={onContainerLayout}
+            >
+                {
+                    containerDimensions && peopleData.length === 0 ?
+                        (
+                            <PeoplesContainer
+                                people={peopleData}
+                                containerDimensions={containerDimensions}
+                            />
+                        )
+                        : (
+                            <EmptyMeetContainer />
+                        )
+                }
+
+            </View>
+
+            <MeetFooter />
         </View>
     )
 }
