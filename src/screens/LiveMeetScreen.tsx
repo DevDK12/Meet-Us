@@ -1,5 +1,6 @@
 import { View } from 'react-native'
 import MeetHeader from '../components/meet/MeetHeader'
+import UserMeetBox from '../components/meet/UserMeetBox'
 import MeetFooter from '../components/meet/MeetFooter';
 import { useContainerDimensions } from '../hooks/useContainerDimensions';
 import EmptyMeetContainer from '../components/meet/EmptyMeetContainer';
@@ -21,6 +22,12 @@ const LiveMeetScreen = () => {
                 className='flex-1'
                 onLayout={onContainerLayout}
             >
+                {containerDimensions && (
+                    <UserMeetBox
+                        containerDimensions={containerDimensions}
+                    />
+                )}
+
                 {
                     peopleData.length > 0 ?
                         (
