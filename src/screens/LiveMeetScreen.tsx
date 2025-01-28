@@ -6,20 +6,22 @@ import { useContainerDimensions } from '../hooks/useContainerDimensions';
 import EmptyMeetContainer from '../components/meet/EmptyMeetContainer';
 import { peopleData } from '../utils/dummyData';
 import PeoplesContainer from '../components/meet/PeoplesContainer';
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const LiveMeetScreen = () => {
 
     const { containerDimensions, onContainerLayout } = useContainerDimensions();
 
     return (
-        <View className='flex-1 bg-[#121212]'>
+        <View
+            style={{ backgroundColor: '#121212', flex: 1 }}
+        >
             <MeetHeader
                 switchCamera={() => { }}
             />
 
-            <View
-                className='flex-1'
+            <GestureHandlerRootView
+                style={{ flex: 1 }}
                 onLayout={onContainerLayout}
             >
                 {containerDimensions && (
@@ -41,7 +43,7 @@ const LiveMeetScreen = () => {
                         )
                 }
 
-            </View>
+            </GestureHandlerRootView>
 
             <MeetFooter />
         </View>

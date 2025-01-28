@@ -1,11 +1,18 @@
 import { TContainerDimensions } from '../../hooks/useContainerDimensions'
-import { FC, useRef } from 'react';
-import { Animated, PanResponder, View } from 'react-native';
+import { FC } from 'react';
+import { View } from 'react-native';
 import CustomText from '../ui/CustomText';
 import { EllipsisVertical } from 'lucide-react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { calculateFinalPos } from '../../utils/Helpers';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
+
+
+function clamp(val: number, min: number, max: number) {
+    return Math.min(Math.max(val, min), max);
+}
 
 type UserMeetBoxProps = {
     containerDimensions: TContainerDimensions;
@@ -14,118 +21,105 @@ const UserMeetBox: FC<UserMeetBoxProps> = ({ containerDimensions }) => {
     const user = { name: 'Dev Kumar', id: '1' };
     const { width: containerWidth, height: containerHeight } = containerDimensions;
 
+    const initialX = containerWidth - containerWidth * 0.24 - 10;
+    const initialY = containerHeight - containerHeight * 0.22 - 10;
+    const maxX = containerWidth - containerWidth * 0.24;
+    const maxY = containerHeight - containerHeight * 0.18;
 
-    const pan = useRef<Animated.ValueXY>(new Animated.ValueXY({
-        x: containerWidth - containerWidth * 0.24 - 10,
-        y: containerHeight - containerHeight * 0.26 - 20,
-    })).current;
+    const translationX = useSharedValue(initialX);
+    const translationY = useSharedValue(initialY);
+    const prevX = useSharedValue(0);
+    const prevY = useSharedValue(0);
 
 
+    const animatedStyles = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: translationX.value },
+            { translateY: translationY.value },
+        ],
+    }));
 
-    const panResponder = useRef(
-        PanResponder.create({
-            onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: () => {
-
-                //* pan.x_value contains absolute x value
-                //* pan.setOffset sets absolute x to x.offset as offset to make them absolute from (0,0)
-                pan.setOffset({
-                    x: pan.x._value,
-                    y: pan.y._value
-                });
-
-                //* Then sets offset x to 0
-                pan.setValue({ x: 0, y: 0 });
-            },
-            onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y, }], {
-                // useNativeDriver: true,
-                useNativeDriver: false,
-            }),
-            onPanResponderRelease: (evt, gestureState) => {
-                pan.flattenOffset();
-                //* provides absolute x,y values in x._value, y._value
-
-                const { dx, dy } = gestureState;
-                //* dx,dy stores total offset from pan start to pan end, not needed here
-
-                const draggedToX = pan.x._value;
-                const draggedToY = pan.y._value;
-
-                //* restrictedX  ==  draggedToX  (-  [0, containerWidth * 0.76])
-                const restrictedX = Math.min(
-                    Math.max(draggedToX, 0),
-                    containerWidth - containerWidth * 0.24,
-                );
-                const restrictedY = Math.min(
-                    Math.max(draggedToY, 0),
-                    containerHeight - containerHeight * 0.18,
-                );
-
-                const { finalX, finalY } = calculateFinalPos(restrictedX, restrictedY, containerWidth, containerHeight);
-
-                Animated.spring(pan, {
-                    toValue: { x: finalX, y: finalY },
-                    useNativeDriver: true,
-                }).start();
-            }
+    const pan = Gesture.Pan()
+        .minDistance(1)
+        .onStart(() => {
+            prevX.value = translationX.value;
+            prevY.value = translationY.value;
         })
-    ).current
+        .onUpdate((event) => {
+            translationX.value = clamp(
+                prevX.value + event.translationX,
+                -30,
+                maxX + 30
+            );
+            translationY.value = clamp(
+                prevY.value + event.translationY,
+                -30,
+                maxY + 30
+            );
+        })
+        .onEnd((event) => {
+            const draggedToX = prevX.value + event.translationX;
+            const draggedToY = prevY.value + event.translationY;
 
+            const restrictedX = clamp(draggedToX, 0, maxX);
+            const restrictedY = clamp(draggedToY, 0, maxY);
+            const { finalX, finalY } = calculateFinalPos(restrictedX, restrictedY, containerWidth, containerHeight);
+
+            translationX.value = withSpring(finalX);
+            translationY.value = withSpring(finalY);
+        })
+        .runOnJS(true);
 
 
     return (
-        <Animated.View
-            className='bg-[#202020] rounded-[10px]  absolute justify-center items-center overflow-hidden'
-            {...panResponder.panHandlers}
-            style={
-                [{
-                    width: '24%',
-                    height: '22%',
-                    zIndex: 99,
-                    elevation: 10,
-                    shadowOffset: { width: 1, height: 1 },
-                    shadowOpacity: 0.6,
-                    shadowRadius: 16,
-                    shadowColor: '#000',
-                },
-                {
-                    transform: [{
-                        translateX: pan.x,
-                    }, {
-                        translateY: pan.y,
-                    }]
-                }
-                ]}
-        >
-            <View
-                className='bg-[#ff5100] justify-center items-center rounded-full w-10 h-10'
+        <GestureDetector gesture={pan} >
+
+            <Animated.View
+                className='bg-[#202020] rounded-[10px]  absolute justify-center items-center overflow-hidden'
+                style={
+                    [{
+                        width: '24%',
+                        height: '22%',
+                        zIndex: 110,
+                        elevation: 10,
+                        shadowOffset: { width: 1, height: 1 },
+                        shadowOpacity: 0.6,
+                        shadowRadius: 16,
+                        shadowColor: '#000',
+                    },
+                        animatedStyles,
+                    ]}
             >
+                <View
+                    className='bg-[#ff5100] justify-center items-center rounded-full w-10 h-10'
+                >
+                    <CustomText
+                        color='white'
+                        fontSize={14}
+                    >
+                        {user?.name?.charAt(0)}
+                    </CustomText>
+                </View>
                 <CustomText
                     color='white'
-                    fontSize={14}
+                    fontSize={10}
+                    style={{
+                        position: 'absolute',
+                        bottom: 5,
+                        left: 5,
+                        zIndex: 99,
+                        fontWeight: '600',
+                    }}
                 >
-                    {user?.name?.charAt(0)}
+                    You
                 </CustomText>
-            </View>
-            <CustomText
-                color='white'
-                fontSize={10}
-                style={{
-                    position: 'absolute',
-                    bottom: 5,
-                    left: 5,
-                    zIndex: 99,
-                    fontWeight: '600',
-                }}
-            >
-                You
-            </CustomText>
-            <View
-                className='absolute bottom-2 right-1'
-            >
-                <EllipsisVertical color="#fff" size={RFValue(14)} />
-            </View>
-        </Animated.View>
+                <View
+                    className='absolute bottom-2 right-1'
+                >
+                    <EllipsisVertical color="#fff" size={RFValue(14)} />
+                </View>
+            </Animated.View>
+        </GestureDetector>
 
 
     );
