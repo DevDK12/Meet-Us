@@ -1,17 +1,25 @@
-import { Image, View } from 'react-native'
+import { Alert, Image, View } from 'react-native'
 import HomeHeader from '../components/home/HomeHeader'
 import { navigate } from '../utils/NavigationUtils'
 import JoinButton from '../components/ui/JoinButton'
 import CustomText from '../components/ui/CustomText'
 import { screenHeight, screenWidth } from '../utils/Constants'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
+import { useUserStore } from '../services/userStore'
 
 
 const HomeScreen = () => {
+    const { user } = useUserStore();
+
 
     const handleNavigation = () => {
+        if (!user?.name) {
+            Alert.alert('Enter your details first to join the meeting');
+            return;
+        }
         navigate('JoinMeetScreen');
     }
+
 
     return (
         <View className='container'>
@@ -58,6 +66,7 @@ const HomeScreen = () => {
             </View>
 
             <JoinButton onPress={handleNavigation} />
+
         </View>
     )
 }

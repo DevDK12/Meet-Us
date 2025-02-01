@@ -1,13 +1,34 @@
-import { View, SafeAreaView, TouchableOpacity } from 'react-native'
+import { View, SafeAreaView, TouchableOpacity, Image } from 'react-native'
 import { CircleUser, Menu } from 'lucide-react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import CustomText from '../ui/CustomText';
 import { navigate } from '../../utils/NavigationUtils';
+import { useUserStore } from '../../services/userStore';
+import UserFormModal from './UserFormModal';
+import { useEffect, useState } from 'react';
 
 const HomeHeader = () => {
 
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const { user } = useUserStore();
+
+
+    useEffect(() => {
+        const checkUserName = () => {
+            if (!user?.name) {
+                setIsModalVisible(true);
+            }
+        }
+        checkUserName();
+    }, [])
+
     const handleNavigation = () => {
+        if (!user?.name) {
+            setIsModalVisible(true);
+            return;
+        }
         navigate('JoinMeetScreen');
     }
 
@@ -43,11 +64,31 @@ const HomeHeader = () => {
                         Enter a meeting code
                     </CustomText>
                 </TouchableOpacity>
-                <CircleUser
-                    size={RFValue(20)}
-                    color={Colors.primary}
-                />
+                <TouchableOpacity
+                    onPress={() => setIsModalVisible(true)}
+                >
+                    {
+                        user?.profilePhotoUrl ?
+
+                            <View className='rounded-full h-[30px] w-[30px]'>
+                                <Image
+                                    source={{ uri: user.profilePhotoUrl }}
+                                    className='w-full h-full rounded-full'
+                                />
+                            </View>
+                            :
+                            <CircleUser
+                                size={RFValue(20)}
+                                color={Colors.primary}
+                            />
+                    }
+                </TouchableOpacity>
+
             </View>
+            <UserFormModal
+                isVisible={isModalVisible}
+                onClose={() => setIsModalVisible(false)}
+            />
         </>
     )
 }
