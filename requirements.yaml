@@ -1,5 +1,5 @@
 dep:
-  #_ utilities 
+  #_ utilities
   - react-native-get-random-values
   - axios
   - uuid
@@ -7,7 +7,7 @@ dep:
   - immer
 
   #_ Navigation
-  - "@react-navigation/native-stack"
+  - '@react-navigation/native-stack'
   - react-native-screens
   - react-native-safe-area-context
 
@@ -19,14 +19,14 @@ dep:
   - react-native-svg
   - react-native-svg-transformer
   - react-native-vector-icons
-  - nativewind 
+  - nativewind
   - tailwindcss
-
 
   #_ Native
   - react-native-gesture-handler
   - react-native-permissions
   - react-native-device-info
+  - react-native-image-picker
 
   #_ Database
   - react-native-mmkv
@@ -36,4 +36,4 @@ dep:
   - socket.io-client
 
 dev:
-  - "@types/react-native-vector-icons"
+  - '@types/react-native-vector-icons'
