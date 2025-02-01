@@ -154,3 +154,13 @@ export const pickImage = (onMediaPickedUp: TOnMediaPickedUp) => {
     },
   );
 };
+
+
+
+export const addHyphens = (str: string) => {
+  return str?.replace(/(.{3})(?=.)/g, '$1-');
+};
+
+export const removeHyphens = (str: string) => {
+  return str?.replace(/-/g, '');
+};
