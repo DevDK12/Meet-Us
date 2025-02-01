@@ -28,6 +28,7 @@ const HomeScreen = () => {
             const isSession = await checkSession(session);
             if (!isSession) removeSession(session);
         }
+        useUserStore.persist.rehydrate();
         setRefreshing(false);
     }, []);
 
