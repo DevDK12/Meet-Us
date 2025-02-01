@@ -1,4 +1,4 @@
-import { Alert, FlatList, TouchableOpacity, View } from 'react-native'
+import { Alert, FlatList, RefreshControl, TouchableOpacity, View } from 'react-native'
 import HomeHeader from '../components/home/HomeHeader'
 import { navigate } from '../utils/NavigationUtils'
 import JoinButton from '../components/ui/JoinButton'
@@ -10,10 +10,26 @@ import { Calendar } from 'lucide-react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { addHyphens } from '../utils/Helpers'
 import { checkSession } from '../services/api/sessionApi'
+import { useCallback, useState } from 'react'
 
 
 const HomeScreen = () => {
     const { user, sessions, addSession, removeSession } = useUserStore();
+
+
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        //_ Remove invalid sessions
+        for (let session of sessions) {
+            const isSession = await checkSession(session);
+            if (!isSession) removeSession(session);
+        }
+        setRefreshing(false);
+    }, []);
+
+
 
     const handleNavigation = () => {
         if (!user?.name) {
@@ -78,6 +94,8 @@ const HomeScreen = () => {
                 contentContainerClassName='p-5'
                 renderItem={renderSessionItem}
                 ListEmptyComponent={EmptyHome}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             />
             <JoinButton onPress={handleNavigation} />
 
