@@ -9,14 +9,11 @@ import EmptyHome from '../components/home/EmptyHome'
 import { Calendar } from 'lucide-react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { addHyphens } from '../utils/Helpers'
+import { checkSession } from '../services/api/sessionApi'
 
 
 const HomeScreen = () => {
-    const { user } = useUserStore();
-
-    const sessions = [
-        'abczxy124'
-    ]
+    const { user, sessions, addSession, removeSession } = useUserStore();
 
     const handleNavigation = () => {
         if (!user?.name) {
@@ -27,8 +24,15 @@ const HomeScreen = () => {
     }
 
 
-    const joinViaSessionId = (sessionId: string) => {
-        // navigate('JoinMeetScreen', { sessionId });
+    const joinViaSessionId = async (id: string) => {
+        const isSession = await checkSession(id);
+        if (isSession) {
+            console.log('Session found:', id);
+            addSession(id);
+        } else {
+            console.log('Session not found:', id);
+            removeSession(id);
+        }
     }
 
     const renderSessionItem = ({ item }: { item: string }) => {

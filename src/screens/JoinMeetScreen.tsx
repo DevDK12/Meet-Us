@@ -1,20 +1,39 @@
-import { ChevronLeft, EllipsisVertical, Video } from 'lucide-react-native'
+import { Video } from 'lucide-react-native'
 import { View, SafeAreaView, TouchableOpacity, TextInput } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
-import { goBack, navigate } from '../utils/NavigationUtils'
+import { navigate } from '../utils/NavigationUtils'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
 import CustomText from '../components/ui/CustomText'
 import LinearGradient from 'react-native-linear-gradient';
 import { Text } from 'react-native'
 import { useState } from 'react'
 import AppBar from '../components/ui/AppBar'
+import { checkSession, createSession } from '../services/api/sessionApi'
+import { useUserStore } from '../services/userStore'
 
 const JoinMeetScreen = () => {
 
+    const { addSession, removeSession } = useUserStore();
     const [meetCode, setMeetCode] = useState('')
 
-    const createNewMeet = () => {
-        navigate('PrepareMeetScreen');
+    const createNewMeet = async () => {
+        const sessionId = await createSession();
+        if (sessionId) {
+            console.log('Session created successfully:', sessionId);
+            addSession(sessionId);
+            navigate('PrepareMeetScreen');
+        }
+    }
+
+    const joinViaSessionId = async (id: string) => {
+        const isSession = await checkSession(id);
+        if (isSession) {
+            console.log('Session found:', id);
+            addSession(id);
+        } else {
+            console.log('Session not found:', id);
+            removeSession(id);
+        }
     }
 
     return (
@@ -72,7 +91,7 @@ const JoinMeetScreen = () => {
                     }}
                     value={meetCode}
                     onChangeText={setMeetCode}
-                    onSubmitEditing={() => { }}
+                    onSubmitEditing={() => joinViaSessionId(meetCode)}
                     placeholder='Example: abc-mnop-xyz'
                     placeholderTextColor={'#888'}
                     returnKeyLabel='Join'
