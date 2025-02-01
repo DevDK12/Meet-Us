@@ -12,9 +12,12 @@ import { addHyphens } from '../utils/Helpers'
 import { checkSession } from '../services/api/sessionApi'
 import { useCallback, useState } from 'react'
 import { useLiveMeetStore } from '../services/meetStore'
+import { useSocket } from '../services/api/SocketProvider'
 
 
 const HomeScreen = () => {
+
+    const { emit } = useSocket();
     const { user, sessions, removeSession } = useUserStore();
     const { addMeetSessionId, removeMeetSessionId } = useLiveMeetStore();
 
@@ -48,9 +51,11 @@ const HomeScreen = () => {
         if (isSession) {
             console.log('Session found:', id);
             addMeetSessionId(id);
+            emit('prepare-session', {
+                sessionId: id,
+                userId: user?.id,
+            })
             navigate('PrepareMeetScreen');
-
-
         } else {
             console.log('Session not found:', id);
             removeSession(id);

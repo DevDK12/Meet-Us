@@ -6,16 +6,19 @@ import { Colors } from 'react-native/Libraries/NewAppScreen'
 import CustomText from '../components/ui/CustomText'
 import LinearGradient from 'react-native-linear-gradient';
 import { Text } from 'react-native'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import AppBar from '../components/ui/AppBar'
 import { checkSession, createSession } from '../services/api/sessionApi'
 import { useUserStore } from '../services/userStore'
 import { useLiveMeetStore } from '../services/meetStore'
 import { addHyphens, removeHyphens } from '../utils/Helpers'
+import { useSocket } from '../services/api/SocketProvider'
 
 const JoinMeetScreen = () => {
 
-    const { addSession, removeSession } = useUserStore();
+    const { emit } = useSocket();
+
+    const { addSession, removeSession, user } = useUserStore();
 
     const { addMeetSessionId, removeMeetSessionId } = useLiveMeetStore();
 
@@ -33,6 +36,10 @@ const JoinMeetScreen = () => {
             console.log('Session created successfully:', sessionId);
             addSession(sessionId);
             addMeetSessionId(sessionId);
+            emit('prepare-session', {
+                sessionId,
+                userId: user?.id,
+            })
             navigate('PrepareMeetScreen');
         }
     }
@@ -44,6 +51,10 @@ const JoinMeetScreen = () => {
             console.log('Session found:', id);
             addSession(id);
             addMeetSessionId(id);
+            emit('prepare-session', {
+                sessionId: id,
+                userId: user?.id,
+            })
             navigate('PrepareMeetScreen');
 
 

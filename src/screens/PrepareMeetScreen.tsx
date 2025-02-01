@@ -1,4 +1,4 @@
-import { View, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform } from 'react-native'
+import { View, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform, Alert } from 'react-native'
 import AppBar from '../components/ui/AppBar'
 import CustomText from '../components/ui/CustomText'
 import { Info, Mic, MicOff, MonitorUp, Share2, Shield, Video, VideoOff } from 'lucide-react-native'
@@ -6,19 +6,24 @@ import { RFValue } from 'react-native-responsive-fontsize'
 import MeetIconBtn from '../components/prepare_meet/MeetIconBtn'
 import { useCallback, useEffect, useState } from 'react'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
-import { navigate } from '../utils/NavigationUtils'
-import { useLiveMeetStore } from '../services/meetStore'
+import { goBack, replace } from '../utils/NavigationUtils'
+import { IParticipant, useLiveMeetStore } from '../services/meetStore'
 import { addHyphens, requestPermissions } from '../utils/Helpers'
 import { MediaStream, mediaDevices, RTCView } from 'react-native-webrtc';
 import { useUserStore } from '../services/userStore'
+import { useSocket } from '../services/api/SocketProvider'
+
+//! BUG : ScrollViews are not working as indented 
 
 
 const PrepareMeetScreen = () => {
 
+    const { emit, on } = useSocket();
     const { user } = useUserStore();
-    const { sessionId, micOn, videoOn, toggle } = useLiveMeetStore();
+    const { sessionId, micOn, videoOn, toggle, addMeetSessionId, removeMeetSessionId } = useLiveMeetStore();
 
     const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+    const [participants, setParticipants] = useState<IParticipant[]>([]);
 
 
     const toggleLocal = (type: 'mic' | 'video') => {
@@ -46,6 +51,22 @@ const PrepareMeetScreen = () => {
             }
         }
     }
+
+
+    useEffect(() => {
+        const handleParticipantsUpdate = (updatedParticipants: { participants: IParticipant[] }) => {
+            setParticipants(updatedParticipants.participants);
+        }
+
+        on('session-info', handleParticipantsUpdate);
+        return () => {
+            if (mediaStream) {
+                //_ Stop all tracks (audio / video)
+                mediaStream.getTracks().forEach((track) => track.stop());
+                mediaStream.release();
+            }
+        }
+    }, [])
 
     const fetchMediaDevices = useCallback(async (isAudioGranted: boolean, isVideoGranted: boolean) => {
         try {
@@ -90,15 +111,56 @@ const PrepareMeetScreen = () => {
 
 
     const handleMeetStart = () => {
-        navigate('LiveMeetScreen');
+        if (!sessionId) {
+            Alert.alert('Error', 'Session Id not found');
+            return;
+        }
+        try {
+            emit('join-session', {
+                name: user?.name,
+                photo: user?.profilePhotoUrl,
+                userId: user?.id,
+                sessionId: sessionId,
+                micOn,
+                videoOn
+            })
+            addMeetSessionId(sessionId);
+            replace('LiveMeetScreen');
+        } catch (error) {
+            console.log('Error joining meet', error);
+
+        }
+    }
+
+    const renderParticipants = () => {
+        if (participants?.length === 0) {
+            return 'No one is in the call yet.';
+        }
+        const names = participants
+            ?.slice(0, 2)
+            ?.map(p => p.name)
+            ?.join(', ');
+
+        const count = participants.length > 2 ? ` and ${participants.length - 2} others` : '';
+
+        return `${names}${count} in the call.`;
     }
 
     return (
         <View className='flex-1 bg-white'>
             <SafeAreaView />
-            <AppBar className='p-4 py-5' />
+            <AppBar
+                className='p-4 py-5'
+                onBackPress={() => {
+                    goBack();
+                    removeMeetSessionId();
+                }}
+            />
             <ScrollView
-                contentContainerClassName='flex-1 px-4'
+                contentContainerStyle={{
+                    flex: 1,
+                    padding: 20,
+                }}
             >
                 <View
                     className='border-b-[1px] border-[#ccc] pb-5 items-center'
@@ -157,6 +219,7 @@ const PrepareMeetScreen = () => {
                         </CustomText>
                     </TouchableOpacity>
 
+
                     <CustomText
                         fontSize={12}
                         fontFamily='OpenSans-Regular'
@@ -164,8 +227,9 @@ const PrepareMeetScreen = () => {
                             textAlign: 'center',
                         }}
                     >
-                        No one is in the call yet.
+                        {renderParticipants()}
                     </CustomText>
+
                 </View>
 
 
@@ -195,9 +259,10 @@ const PrepareMeetScreen = () => {
                             fontSize={11}
                             fontFamily='Roboto-Regular'
                         >
-                            meet.google.com/s0b-t5c-ty5
+                            meet.google.com/{addHyphens(sessionId!)}
                         </CustomText>
                     </View>
+
                     <View className='flex-row items-center justify-between mb-[20px]'>
                         <Shield size={RFValue(14)} color={Colors.text} />
                         <CustomText
