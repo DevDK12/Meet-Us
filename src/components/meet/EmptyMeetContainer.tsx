@@ -1,8 +1,15 @@
 import { TouchableOpacity, View } from 'react-native'
 import CustomText from '../ui/CustomText'
-import { Clipboard, Copy, Share } from 'lucide-react-native'
-import { RFValue } from 'react-native-responsive-fontsize'
-const EmptyMeetContainer = () => {
+import { Clipboard, Share } from 'lucide-react-native'
+import { RFValue } from 'react-native-responsive-fontsize';
+import { addHyphens } from '../../utils/Helpers';
+import { FC } from 'react';
+
+
+type EmptyMeetContainerProps = {
+    sessionId: string,
+}
+const EmptyMeetContainer: FC<EmptyMeetContainerProps> = ({ sessionId }) => {
     return (
         <View
             className='flex-[0.7] justify-center items-start px-5'
@@ -41,7 +48,7 @@ const EmptyMeetContainer = () => {
                         flex: 1,
                     }}
                 >
-                    meet.meetus.com/s0b-t5c-ty5
+                    meet.meetus.com/{addHyphens(sessionId)}
                 </CustomText>
                 <TouchableOpacity
                     className='ml-[10px]'

@@ -7,8 +7,10 @@ import EmptyMeetContainer from '../components/meet/EmptyMeetContainer';
 import { peopleData } from '../utils/dummyData';
 import PeoplesContainer from '../components/meet/PeoplesContainer';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useLiveMeetStore } from '../services/meetStore';
 
 const LiveMeetScreen = () => {
+    const { sessionId, participants } = useLiveMeetStore();
 
     const { containerDimensions, onContainerLayout } = useContainerDimensions();
 
@@ -27,11 +29,12 @@ const LiveMeetScreen = () => {
                 {containerDimensions && (
                     <UserMeetBox
                         containerDimensions={containerDimensions}
+
                     />
                 )}
 
                 {
-                    peopleData.length > 0 ?
+                    participants?.length > 0 ?
                         (
                             <PeoplesContainer
                                 people={peopleData}
@@ -39,7 +42,9 @@ const LiveMeetScreen = () => {
                             />
                         )
                         : (
-                            <EmptyMeetContainer />
+                            <EmptyMeetContainer
+                                sessionId={sessionId!}
+                            />
                         )
                 }
 

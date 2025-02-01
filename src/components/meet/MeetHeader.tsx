@@ -2,6 +2,8 @@ import { View, Text, SafeAreaView, Platform } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import { SwitchCamera, Volume1, Volume2, VolumeOff } from 'lucide-react-native'
 import { FC, useState } from 'react'
+import { useLiveMeetStore } from '../../services/meetStore'
+import { addHyphens } from '../../utils/Helpers'
 
 
 type MeetHeaderProps = {
@@ -13,6 +15,9 @@ const MeetHeader: FC<MeetHeaderProps> = ({ switchCamera }) => {
     const [volumeLevel, setVolumeLevel] = useState(2);
     //* 0 : mute , 1 : headset, 2 : speaker
 
+    const { sessionId } = useLiveMeetStore();
+
+
     return (
         <LinearGradient
             colors={['#000', 'rgba(0,0,0,0.7)', 'transparent']}
@@ -21,7 +26,7 @@ const MeetHeader: FC<MeetHeaderProps> = ({ switchCamera }) => {
             <SafeAreaView />
             <View className='flex-row justify-between items-center px-4 pb-8'
                 style={{ paddingBottom: Platform.OS === 'ios' ? 0 : 10 }}>
-                <Text className='text-white text-lg font-bold'>s0b-t5c-ty5</Text>
+                <Text className='text-white text-lg font-bold'>{addHyphens(sessionId!)}</Text>
                 <View className='flex-row items-center gap-6'>
                     <SwitchCamera onPress={switchCamera} color={'white'} size={24} />
                     {
