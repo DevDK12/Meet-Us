@@ -11,10 +11,12 @@ import { RFValue } from 'react-native-responsive-fontsize'
 import { addHyphens } from '../utils/Helpers'
 import { checkSession } from '../services/api/sessionApi'
 import { useCallback, useState } from 'react'
+import { useLiveMeetStore } from '../services/meetStore'
 
 
 const HomeScreen = () => {
-    const { user, sessions, addSession, removeSession } = useUserStore();
+    const { user, sessions, removeSession } = useUserStore();
+    const { addMeetSessionId, removeMeetSessionId } = useLiveMeetStore();
 
 
     const [refreshing, setRefreshing] = useState(false);
@@ -44,10 +46,15 @@ const HomeScreen = () => {
         const isSession = await checkSession(id);
         if (isSession) {
             console.log('Session found:', id);
-            addSession(id);
+            addMeetSessionId(id);
+            navigate('PrepareMeetScreen');
+
+
         } else {
             console.log('Session not found:', id);
             removeSession(id);
+            removeMeetSessionId();
+            Alert.alert('Session not found', 'Please enter a valid session code');
         }
     }
 

@@ -1,38 +1,57 @@
 import { Video } from 'lucide-react-native'
-import { View, SafeAreaView, TouchableOpacity, TextInput } from 'react-native'
+import { View, SafeAreaView, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { navigate } from '../utils/NavigationUtils'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
 import CustomText from '../components/ui/CustomText'
 import LinearGradient from 'react-native-linear-gradient';
 import { Text } from 'react-native'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import AppBar from '../components/ui/AppBar'
 import { checkSession, createSession } from '../services/api/sessionApi'
 import { useUserStore } from '../services/userStore'
+import { useLiveMeetStore } from '../services/meetStore'
+import { addHyphens, removeHyphens } from '../utils/Helpers'
 
 const JoinMeetScreen = () => {
 
     const { addSession, removeSession } = useUserStore();
-    const [meetCode, setMeetCode] = useState('')
+
+    const { addMeetSessionId, removeMeetSessionId } = useLiveMeetStore();
+
+    const [meetCode, setMeetCode] = useState('');
+
+    const handleMeetCode = (code: string) => {
+        const cleanedCode = removeHyphens(code);
+        const hypenedCode = addHyphens(cleanedCode);
+        setMeetCode(hypenedCode);
+    }
 
     const createNewMeet = async () => {
         const sessionId = await createSession();
         if (sessionId) {
             console.log('Session created successfully:', sessionId);
             addSession(sessionId);
+            addMeetSessionId(sessionId);
             navigate('PrepareMeetScreen');
         }
     }
 
     const joinViaSessionId = async (id: string) => {
+        id = removeHyphens(id);
         const isSession = await checkSession(id);
         if (isSession) {
             console.log('Session found:', id);
             addSession(id);
+            addMeetSessionId(id);
+            navigate('PrepareMeetScreen');
+
+
         } else {
             console.log('Session not found:', id);
             removeSession(id);
+            removeMeetSessionId();
+            Alert.alert('Session not found', 'Please enter a valid session code');
         }
     }
 
@@ -90,7 +109,7 @@ const JoinMeetScreen = () => {
                         fontFamily: 'OpenSans-Regular',
                     }}
                     value={meetCode}
-                    onChangeText={setMeetCode}
+                    onChangeText={handleMeetCode}
                     onSubmitEditing={() => joinViaSessionId(meetCode)}
                     placeholder='Example: abc-mnop-xyz'
                     placeholderTextColor={'#888'}

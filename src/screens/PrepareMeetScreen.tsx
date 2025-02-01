@@ -7,18 +7,19 @@ import MeetIconBtn from '../components/prepare_meet/MeetIconBtn'
 import { useState } from 'react'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
 import { navigate } from '../utils/NavigationUtils'
+import { useLiveMeetStore } from '../services/meetStore'
+import { addHyphens } from '../utils/Helpers'
 
 
 const PrepareMeetScreen = () => {
+    const { sessionId, micOn, videoOn, toggle } = useLiveMeetStore();
 
-    const [isMicOn, setIsMicOn] = useState(true)
-    const [isVideoOn, setIsVideoOn] = useState(true)
 
     const toggleLocal = (type: 'mic' | 'video') => {
         if (type === 'mic') {
-            setIsMicOn(!isMicOn)
+            toggle('mic')
         } else {
-            setIsVideoOn(!isVideoOn)
+            toggle('video')
         }
     }
 
@@ -44,7 +45,7 @@ const PrepareMeetScreen = () => {
                             textAlign: 'center',
                         }}
                     >
-                        s0b-t5c-ty5
+                        {addHyphens(sessionId!)}
                     </CustomText>
                     <View
                         className='w-[130px] h-[240px] my-5 bg-[#111] rounded-2xl overflow-hidden justify-center items-center self-center'
@@ -56,11 +57,11 @@ const PrepareMeetScreen = () => {
 
                         <View className='flex-row justify-center gap-2 absolute bottom-2 w-full mt-2'>
                             <MeetIconBtn
-                                icon={isMicOn ? <Mic size={RFValue(12)} color={'#fff'} /> : <MicOff size={RFValue(12)} color={'#fff'} />}
+                                icon={micOn ? <Mic size={RFValue(12)} color={'#fff'} /> : <MicOff size={RFValue(12)} color={'#fff'} />}
                                 onPress={() => toggleLocal('mic')}
                             />
                             <MeetIconBtn
-                                icon={isVideoOn ? <Video size={RFValue(12)} color={'#fff'} /> : <VideoOff size={RFValue(12)} color={'#fff'} />}
+                                icon={videoOn ? <Video size={RFValue(12)} color={'#fff'} /> : <VideoOff size={RFValue(12)} color={'#fff'} />}
                                 onPress={() => toggleLocal('video')}
                             />
 
