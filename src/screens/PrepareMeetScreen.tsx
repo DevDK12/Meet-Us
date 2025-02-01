@@ -1,27 +1,93 @@
-import { View, SafeAreaView, ScrollView, Image, TouchableOpacity, Share, Platform } from 'react-native'
+import { View, SafeAreaView, ScrollView, Image, TouchableOpacity, Platform } from 'react-native'
 import AppBar from '../components/ui/AppBar'
 import CustomText from '../components/ui/CustomText'
 import { Info, Mic, MicOff, MonitorUp, Share2, Shield, Video, VideoOff } from 'lucide-react-native'
 import { RFValue } from 'react-native-responsive-fontsize'
 import MeetIconBtn from '../components/prepare_meet/MeetIconBtn'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
 import { navigate } from '../utils/NavigationUtils'
 import { useLiveMeetStore } from '../services/meetStore'
-import { addHyphens } from '../utils/Helpers'
+import { addHyphens, requestPermission, requestPermissions } from '../utils/Helpers'
+import { MediaStream, mediaDevices, RTCView } from 'react-native-webrtc';
+import { useUserStore } from '../services/userStore'
 
 
 const PrepareMeetScreen = () => {
+
+    const { user } = useUserStore();
     const { sessionId, micOn, videoOn, toggle } = useLiveMeetStore();
+
+    const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
 
 
     const toggleLocal = (type: 'mic' | 'video') => {
         if (type === 'mic') {
             toggle('mic')
+            toggleAudioTrack(!micOn);
         } else {
             toggle('video')
+            toggleVideoTrack(!videoOn);
         }
     }
+    const toggleAudioTrack = (isOn: boolean) => {
+        if (mediaStream) {
+            const audioTrack = mediaStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = isOn;
+            }
+        }
+    }
+    const toggleVideoTrack = (isOn: boolean) => {
+        if (mediaStream) {
+            const videoTrack = mediaStream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = isOn;
+            }
+        }
+    }
+
+    const fetchMediaDevices = useCallback(async (isAudioGranted: boolean, isVideoGranted: boolean) => {
+        try {
+            const stream = await mediaDevices.getUserMedia({
+                audio: true,
+                video: true,
+            });
+            setMediaStream(stream);
+            const audioTrack = stream.getAudioTracks()[0];
+            const videoTrack = stream.getVideoTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = isAudioGranted;
+            }
+            if (videoTrack) {
+                videoTrack.enabled = isVideoGranted;
+            }
+
+        } catch (error) {
+            console.log('Error getting user media', error);
+        }
+    }, []);
+
+
+    const fetchPermissionsAndSetTracks = useCallback(async () => {
+        const result = await requestPermissions();
+        if (result.isCameraGranted) {
+            toggleLocal('video');
+        }
+        if (result.isMicrophoneGranted) {
+            toggleLocal('mic');
+        }
+        fetchMediaDevices(result.isMicrophoneGranted, result.isCameraGranted);
+
+    }, [fetchMediaDevices])
+
+
+
+    useEffect(() => {
+        fetchPermissionsAndSetTracks();
+    }, [fetchPermissionsAndSetTracks])
+
+
 
     const handleMeetStart = () => {
         navigate('LiveMeetScreen');
@@ -50,10 +116,19 @@ const PrepareMeetScreen = () => {
                     <View
                         className='w-[130px] h-[240px] my-5 bg-[#111] rounded-2xl overflow-hidden justify-center items-center self-center'
                     >
-                        <Image
-                            source={require('../assets/images/bg.png')}
-                            className='w-[40px] h-[40px] rounded-full self-center'
+
+                        {mediaStream && videoOn ? <RTCView
+                            streamURL={mediaStream?.toURL()}
+                            style={{ width: '100%', height: '100%' }}
+                            mirror={true}
+                            objectFit='cover'
                         />
+                            :
+                            <Image
+                                source={{ uri: user?.profilePhotoUrl }}
+                                className='w-[40px] h-[40px] rounded-full self-center'
+                            />
+                        }
 
                         <View className='flex-row justify-center gap-2 absolute bottom-2 w-full mt-2'>
                             <MeetIconBtn
