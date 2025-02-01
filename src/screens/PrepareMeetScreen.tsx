@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Colors } from 'react-native/Libraries/NewAppScreen'
 import { navigate } from '../utils/NavigationUtils'
 import { useLiveMeetStore } from '../services/meetStore'
-import { addHyphens, requestPermission, requestPermissions } from '../utils/Helpers'
+import { addHyphens, requestPermissions } from '../utils/Helpers'
 import { MediaStream, mediaDevices, RTCView } from 'react-native-webrtc';
 import { useUserStore } from '../services/userStore'
 
