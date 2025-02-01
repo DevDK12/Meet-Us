@@ -3,14 +3,19 @@ import { View, TouchableOpacity, Platform } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { goBack } from '../../utils/NavigationUtils'
-import { useState } from 'react'
+import { FC, useState } from 'react'
+import { useLiveMeetStore } from '../../services/meetStore'
 
 
+export type MeetFooterProps = {
 
-const MeetFooter = () => {
+    handleHangUp: () => void,
+    handleVideoToggle: () => void,
+    handleMicToggle: () => void,
+}
+const MeetFooter: FC<MeetFooterProps> = ({ handleHangUp, handleVideoToggle, handleMicToggle }) => {
 
-    const [mic, setMic] = useState(false);
-    const [video, setVideo] = useState(false);
+    const { micOn, videoOn } = useLiveMeetStore();
 
     const getIconStyle = (isActive: boolean) => ({
         backgroundColor: isActive ? 'rgba(255,255,255,0.1)' : '#FFFFFF',
@@ -32,23 +37,23 @@ const MeetFooter = () => {
             >
                 <TouchableOpacity
                     className='bg-[#ff0000] p-[14px] rounded-full'
-                    onPress={() => goBack()}
+                    onPress={handleHangUp}
                 >
                     <PhoneOff color={'white'} size={RFValue(16)} />
                 </TouchableOpacity>
                 <TouchableOpacity
                     className='p-[12px] rounded-full'
-                    style={getIconStyle(video)}
-                    onPress={() => setVideo(!video)}
+                    style={getIconStyle(videoOn)}
+                    onPress={handleVideoToggle}
                 >
-                    {video ? <Video color={getIconColor(video)} size={RFValue(14)} /> : <VideoOff color={getIconColor(video)} size={RFValue(14)} />}
+                    {videoOn ? <Video color={getIconColor(videoOn)} size={RFValue(14)} /> : <VideoOff color={getIconColor(videoOn)} size={RFValue(14)} />}
                 </TouchableOpacity>
                 <TouchableOpacity
                     className='p-[12px] rounded-full'
-                    style={getIconStyle(mic)}
-                    onPress={() => setMic(!mic)}
+                    style={getIconStyle(micOn)}
+                    onPress={handleMicToggle}
                 >
-                    {mic ? <Mic color={getIconColor(mic)} size={RFValue(14)} /> : <MicOff color={getIconColor(mic)} size={RFValue(14)} />}
+                    {micOn ? <Mic color={getIconColor(micOn)} size={RFValue(14)} /> : <MicOff color={getIconColor(micOn)} size={RFValue(14)} />}
                 </TouchableOpacity>
                 <TouchableOpacity
                     className='bg-[rgba(255,255,255,0.1)] p-[12px] rounded-full'

@@ -1,12 +1,15 @@
 import { TContainerDimensions } from '../../hooks/useContainerDimensions'
 import { FC } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import CustomText from '../ui/CustomText';
 import { EllipsisVertical } from 'lucide-react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { calculateFinalPos } from '../../utils/Helpers';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { MediaStream, RTCView } from 'react-native-webrtc';
+import { useUserStore } from '../../services/userStore';
+import { useLiveMeetStore } from '../../services/meetStore';
 
 
 
@@ -15,10 +18,13 @@ function clamp(val: number, min: number, max: number) {
 }
 
 type UserMeetBoxProps = {
-    containerDimensions: TContainerDimensions;
+    containerDimensions: TContainerDimensions,
+    mediaStream: MediaStream | null,
 }
-const UserMeetBox: FC<UserMeetBoxProps> = ({ containerDimensions }) => {
-    const user = { name: 'Dev Kumar', id: '1' };
+const UserMeetBox: FC<UserMeetBoxProps> = ({ containerDimensions, mediaStream }) => {
+    const { user } = useUserStore();
+    const { videoOn } = useLiveMeetStore();
+
     const { width: containerWidth, height: containerHeight } = containerDimensions;
 
     const initialX = containerWidth - containerWidth * 0.24 - 10;
@@ -90,16 +96,37 @@ const UserMeetBox: FC<UserMeetBoxProps> = ({ containerDimensions }) => {
                         animatedStyles,
                     ]}
             >
-                <View
-                    className='bg-[#ff5100] justify-center items-center rounded-full w-10 h-10'
-                >
-                    <CustomText
-                        color='white'
-                        fontSize={14}
-                    >
-                        {user?.name?.charAt(0)}
-                    </CustomText>
-                </View>
+                {
+                    mediaStream && videoOn ? <RTCView
+                        streamURL={mediaStream?.toURL()}
+                        style={{ width: '100%', height: '100%' }}
+                        mirror={true}
+                        objectFit='cover'
+                    /> :
+                        <View
+                            className='bg-[#ff5100] justify-center items-center rounded-full w-10 h-10'
+                        >
+                            {
+                                user?.profilePhotoUrl ? (
+                                    <Image
+                                        source={{ uri: user?.profilePhotoUrl }}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            borderRadius: 50,
+                                        }}
+                                    />
+                                ) : <CustomText
+                                    color='white'
+                                    fontSize={14}
+                                >
+                                    {user?.name?.charAt(0)}
+                                </CustomText>
+                            }
+
+                        </View>
+                }
+
                 <CustomText
                     color='white'
                     fontSize={10}
