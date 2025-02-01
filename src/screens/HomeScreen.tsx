@@ -104,6 +104,7 @@ const HomeScreen = () => {
                 ListEmptyComponent={EmptyHome}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                removeClippedSubviews={false}
             />
             <JoinButton onPress={handleNavigation} />
 
