@@ -1,13 +1,16 @@
+import { MediaStream } from 'react-native-webrtc';
 import { create } from 'zustand';
 
 
 
 export interface IParticipant {
-    id: string,
+    userId: string,
     name: string,
     micOn: boolean,
     videoOn: boolean,
-    streamURL: string,
+    mediaStream: MediaStream | null,
+    photo: string | null,
+    speaking?: boolean,
 }
 
 
@@ -20,9 +23,11 @@ interface ILiveMeetState {
     addMeetSessionId: (sessionId: string) => void,
     removeMeetSessionId: () => void,
     addParticipant: (participant: IParticipant) => void,
-    removeParticipant: (participant: IParticipant) => void,
+    removeParticipant: (participantId: string) => void,
     updateParticipant: (participant: IParticipant) => void,
     toggle: (type: 'mic' | 'video') => void,
+    clear: () => void,
+    setRemoteMediaStream: (participantId: string, remoteStream: MediaStream) => void,
 }
 
 
@@ -35,6 +40,10 @@ export const useLiveMeetStore = create<ILiveMeetState>()(
         micOn: false,
         videoOn: false,
 
+        clear: () => set({
+            sessionId: null,
+            participants: [],
+        }),
 
         addMeetSessionId: (sessionId) => set({ sessionId }),
 
@@ -45,17 +54,17 @@ export const useLiveMeetStore = create<ILiveMeetState>()(
             set({ participants: [...participants, participant] })
         },
 
-        removeParticipant: (participant) => {
+        removeParticipant: (participantId) => {
             const { participants } = get();
             set({
-                participants: participants.filter(p => p.id !== participant.id)
+                participants: participants.filter(p => p.userId !== participantId)
             })
         },
 
         updateParticipant: (updateParticipant) => {
             const { participants } = get();
             set({
-                participants: participants.map(p => p.id === updateParticipant.id ? {
+                participants: participants.map(p => p.userId === updateParticipant.userId ? {
                     ...p,
                     micOn: updateParticipant.micOn,
                     videoOn: updateParticipant.videoOn,
@@ -72,7 +81,17 @@ export const useLiveMeetStore = create<ILiveMeetState>()(
             }
         },
 
-
+        setRemoteMediaStream: (participantId, remoteStream) => {
+            const { participants } = get();
+            const updatedParticipants = participants.map(p => p.userId === participantId ? {
+                ...p,
+                mediaStream: remoteStream,
+            } : p);
+            // if(!participants.some(p => p.userId === participantId)){
+            //     updatedParticipants.push({id: participantId, streamURL});
+            // }
+            set({ participants: updatedParticipants });
+        },
     }),
 
 

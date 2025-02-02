@@ -4,10 +4,12 @@ import { FC } from 'react';
 import CustomText from '../ui/CustomText';
 import { EllipsisVertical, MicOff } from 'lucide-react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { RTCView } from 'react-native-webrtc';
+import { IParticipant } from '../../services/meetStore';
 
 
 type PeoplesContainerProps = {
-    people: any[];
+    people: IParticipant[];
     containerDimensions: TContainerDimensions | null;
 }
 
@@ -30,31 +32,44 @@ const PeoplesContainer: FC<PeoplesContainerProps> = ({ people, containerDimensio
                             key={index}
                             className='justify-center items-center rounded-[10px] bg-[#2e3030] overflow-hidden mx-1 my-1 border-[#95c9ff]'
                             style={[
-                                person?.speaking ? { borderWidth: 3, } : null,
+                                // person?.speaking ? { borderWidth: 3, } : null,
+                                person?.micOn ? { borderWidth: 3, } : null,
                                 Array.isArray(gridStyle) ? gridStyle[index] : gridStyle,
                             ]}
                         >
-                            <View
-                                className='bg-[#ff5100] justify-center items-center '
-                                style={{
-                                    width: 60,
-                                    height: 60,
-                                    borderRadius: 60,
-                                }}
-                            >
-                                {person?.photo ? (
-                                    <Image
-                                        source={{ uri: person?.photo }}
-                                        style={{ width: 60, height: 60, borderRadius: 60 }}
-                                    />
-                                ) : (
-                                    <CustomText
-                                        color='white'
-                                        fontSize={14}
-                                    >{person?.name?.charAt(0)}</CustomText>
-                                )}
+                            {person?.videoOn && person?.mediaStream?.toURL() ?
+                                <RTCView
+                                    mirror={true}
+                                    objectFit='cover'
+                                    streamURL={person?.mediaStream?.toURL()}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                    }}
+                                /> :
+                                <View
+                                    className='bg-[#ff5100] justify-center items-center '
+                                    style={{
+                                        width: 60,
+                                        height: 60,
+                                        borderRadius: 60,
+                                    }}
+                                >
+                                    {person?.photo ? (
+                                        <Image
+                                            source={{ uri: person?.photo }}
+                                            style={{ width: 60, height: 60, borderRadius: 60 }}
+                                        />
+                                    ) : (
+                                        <CustomText
+                                            color='white'
+                                            fontSize={14}
+                                        >{person?.name?.charAt(0)}</CustomText>
+                                    )}
 
-                            </View>
+                                </View>
+                            }
+
                             <CustomText
                                 color='white'
                                 fontSize={10}

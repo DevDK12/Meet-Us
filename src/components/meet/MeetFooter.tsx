@@ -9,11 +9,10 @@ import { useLiveMeetStore } from '../../services/meetStore'
 
 export type MeetFooterProps = {
 
-    handleHangUp: () => void,
     handleVideoToggle: () => void,
     handleMicToggle: () => void,
 }
-const MeetFooter: FC<MeetFooterProps> = ({ handleHangUp, handleVideoToggle, handleMicToggle }) => {
+const MeetFooter: FC<MeetFooterProps> = ({ handleVideoToggle, handleMicToggle }) => {
 
     const { micOn, videoOn } = useLiveMeetStore();
 
@@ -37,7 +36,7 @@ const MeetFooter: FC<MeetFooterProps> = ({ handleHangUp, handleVideoToggle, hand
             >
                 <TouchableOpacity
                     className='bg-[#ff0000] p-[14px] rounded-full'
-                    onPress={handleHangUp}
+                    onPress={() => goBack()}
                 >
                     <PhoneOff color={'white'} size={RFValue(16)} />
                 </TouchableOpacity>

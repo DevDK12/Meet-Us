@@ -3,13 +3,19 @@ import CustomText from '../ui/CustomText'
 import { Clipboard, Share } from 'lucide-react-native'
 import { RFValue } from 'react-native-responsive-fontsize';
 import { addHyphens } from '../../utils/Helpers';
-import { FC } from 'react';
+import { useLiveMeetStore } from '../../services/meetStore';
+import { goBack } from '../../utils/NavigationUtils';
 
 
-type EmptyMeetContainerProps = {
-    sessionId: string,
-}
-const EmptyMeetContainer: FC<EmptyMeetContainerProps> = ({ sessionId }) => {
+
+const EmptyMeetContainer = () => {
+
+    const { sessionId } = useLiveMeetStore();
+
+    if (!sessionId) {
+        goBack();
+        return null;
+    }
     return (
         <View
             className='flex-[0.7] justify-center items-start px-5'
@@ -20,10 +26,11 @@ const EmptyMeetContainer: FC<EmptyMeetContainerProps> = ({ sessionId }) => {
                 fontSize={12}
                 style={{
                     marginBottom: 8,
-                }}
+                }
+                }
             >
                 You're the only one here
-            </CustomText>
+            </CustomText >
             <CustomText
                 color='#aaaaaa'
                 fontFamily='OpenSans-Regular'
@@ -71,7 +78,7 @@ const EmptyMeetContainer: FC<EmptyMeetContainerProps> = ({ sessionId }) => {
                     Share Invite
                 </CustomText>
             </TouchableOpacity>
-        </View>
+        </View >
     )
 }
 export default EmptyMeetContainer
