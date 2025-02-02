@@ -37,13 +37,14 @@ type TPayload = {
     photo?: string,
     micOn?: boolean,
     videoOn?: boolean,
+
 }
 export interface ISocketContext {
     socket: Socket | null,
     initializeSocket: () => void,
     emit: (event: TEvent, data: TPayload) => void,
     on: (event: TEvent, cb: (...args: any[]) => void) => void,
-    off: (event: TEvent, cb: (...args: any[]) => void) => void,
+    off: (event: TEvent) => void,
     disconnect: () => void,
     removeListener: (listnerName: string) => void,
 }
@@ -73,8 +74,8 @@ export const SocketProvider: FC<SocketProviderProps> = ({ children }) => {
         socket?.current?.on(event, cb);
     }
 
-    const off = (event: TEvent, cb: (...args: any[]) => void) => {
-        socket?.current?.off(event, cb);
+    const off = (event: TEvent) => {
+        socket?.current?.off(event);
     }
 
     const disconnect = () => {
