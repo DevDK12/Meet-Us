@@ -1,6 +1,7 @@
 import { createContext, FC, useContext, useEffect, useRef } from "react";
 import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from "../config";
+import { RTCIceCandidate, RTCPeerConnection } from "react-native-webrtc";
 
 
 type TEvent = 'connect'
@@ -37,7 +38,11 @@ type TPayload = {
     photo?: string,
     micOn?: boolean,
     videoOn?: boolean,
-
+    sender?: string,
+    receiver?: string,
+    candidate?: RTCIceCandidate,
+    offer?: any,
+    answer?: any,
 }
 export interface ISocketContext {
     socket: Socket | null,

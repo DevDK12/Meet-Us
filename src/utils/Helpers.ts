@@ -164,3 +164,14 @@ export const addHyphens = (str: string) => {
 export const removeHyphens = (str: string) => {
   return str?.replace(/-/g, '');
 };
+
+export const peerConstraints = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+};
+export const sessionConstraints = {
+  mandatory: {
+    OfferToReceiveAudio: true,
+    OfferToReceiveVideo: true,
+    VoiceActivityDetection: true,
+  },
+};
