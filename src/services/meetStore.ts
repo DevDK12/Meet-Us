@@ -28,6 +28,7 @@ interface ILiveMeetState {
     toggle: (type: 'mic' | 'video') => void,
     clear: () => void,
     setRemoteMediaStream: (participantId: string, remoteStream: MediaStream) => void,
+    removeRemoteMediaStream: (participantId: string) => void,
 }
 
 
@@ -90,6 +91,15 @@ export const useLiveMeetStore = create<ILiveMeetState>()(
             // if(!participants.some(p => p.userId === participantId)){
             //     updatedParticipants.push({id: participantId, streamURL});
             // }
+            set({ participants: updatedParticipants });
+        },
+
+        removeRemoteMediaStream: (participantId) => {
+            const { participants } = get();
+            const updatedParticipants = participants.filter(p => p.userId === participantId ? {
+                ...p,
+                mediaStream: null,
+            } : p);
             set({ participants: updatedParticipants });
         },
     }),

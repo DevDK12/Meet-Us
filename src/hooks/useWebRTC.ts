@@ -22,6 +22,7 @@ export const useWebRTC = () => {
         micOn,
         videoOn,
         setRemoteMediaStream,
+        removeRemoteMediaStream,
         addParticipant,
         toggle,
         removeParticipant,
@@ -57,27 +58,97 @@ export const useWebRTC = () => {
     const pendingCandidates = useRef<Map<string, RTCIceCandidate[]>>(new Map());
 
     const toggleMic = () => {
-        if (localStream) {
-            localStream?.getAudioTracks().forEach(track => track.enabled = !micOn
-            )
+        try {
+            if (!localStream) throw new Error('Local Stream not found');
+            localStream.getAudioTracks().forEach(track => track.enabled = !micOn)
+            toggle('mic')
+            emit('toggle-mute', { sessionId: sessionId!, userId: user?.id });
         }
-        toggle('mic');
-        emit('toggle-mute', { sessionId: sessionId!, userId: user?.id });
+        catch (e) {
+            console.error('Error toggling mic : ', e);
+        }
+
     }
     const toggleVideo = () => {
-        if (localStream) {
-            localStream?.getVideoTracks().forEach(track => track.enabled = !videoOn
-            )
+        try {
+            if (!localStream) throw new Error('Local Stream not found');
+            localStream.getVideoTracks().forEach(track => track.enabled = !videoOn)
+            toggle('video')
+            emit('toggle-video', { sessionId: sessionId!, userId: user?.id });
         }
-        toggle('video');
-        emit('toggle-video', { sessionId: sessionId!, userId: user?.id });
+        catch (e) {
+            console.error('Error toggling Video : ', e);
+        }
     }
     const switchCamera = () => {
-        if (localStream) {
-            localStream?.getVideoTracks().forEach(track => track._switchCamera()
-            )
+        try {
+            if (!localStream) throw new Error('Local Stream not found');
+            localStream?.getVideoTracks().forEach(track => track._switchCamera());
+        } catch (error) {
+            console.error("Camera switch failed:", error);
         }
     }
+
+
+    const stopAllTracks = (stream: MediaStream) => {
+        stream.getTracks().forEach(track => track.stop());
+    };
+    const closePeerConnection = (userId: string) => {
+        const pc = peerConnections.current.get(userId);
+        if (pc) {
+            pc.ontrack = null;
+            pc.onicecandidate = null;
+            pc.close();
+            peerConnections.current.delete(userId);
+            pendingCandidates.current.delete(userId);
+            removeRemoteMediaStream(userId); // *** Clean remote media state
+        }
+    };
+
+
+
+
+    const createPeerConnection = (userId: string) => {
+        const pc = new RTCPeerConnection(peerConstraints);
+
+        pc.ontrack = (event: RTCTrackEvent<any>) => {
+            // if (!isMounted.current) return;
+            const remoteStream = new MediaStream();
+            event.streams[0].getTracks().forEach((track: MediaStreamTrack) => {
+                remoteStream.addTrack(track);
+            });
+
+            console.log('✅ Valid Remote Stream:', remoteStream.toURL());
+            console.log('🎤 Audio Tracks:', remoteStream.getAudioTracks());
+            console.log('📹 Video Tracks:', remoteStream.getVideoTracks());
+
+            setRemoteMediaStream(userId, remoteStream);
+        };
+
+        pc.onupdatetrack = (event: RTCTrackEvent<any>) => {
+            // Update remoteStream if the video track changes
+            setRemoteMediaStream(userId, event.streams[0]);
+        };
+
+
+        pc.onicecandidate = (event: RTCIceCandidateEvent<any>) => {
+            const iceCandidate = event.candidate;
+            if (iceCandidate) {
+                emit('send-ice-candidate', {
+                    sessionId: sessionId!,
+                    sender: user?.id,
+                    receiver: userId,
+                    candidate: iceCandidate,
+                });
+            }
+        };
+
+        return pc;
+    };
+
+
+
+
 
     const startLocalStream = useCallback(async () => {
         try {
@@ -86,6 +157,7 @@ export const useWebRTC = () => {
                 video: true,
             });
             setLocalStream(mediaStream);
+            localStreamRef.current = mediaStream;
         } catch (error) {
             console.log('Error getting user media', error);
         }
@@ -94,10 +166,12 @@ export const useWebRTC = () => {
     useEffect(() => {
         startLocalStream();
         return () => {
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    track.stop();
-                });
+
+            if (localStreamRef.current) {
+                console.log("🔴🔴🔴🔴 Cleaning Local Stream now 🔴🔴🔴🔴");
+                stopAllTracks(localStreamRef.current);
+                setLocalStream(null);
+                localStreamRef.current = null;
             }
         }
     }, [startLocalStream]);
@@ -105,48 +179,26 @@ export const useWebRTC = () => {
 
 
     const establishPeerConnections = async () => {
-        participantsRef.current?.forEach(async streamUser => {
+        const otherParticipants = [...participantsRef.current];
+
+        otherParticipants.forEach(async streamUser => {
             if (!peerConnections.current.has(streamUser?.userId)) {
 
-                const peerConnection = new RTCPeerConnection(peerConstraints);
+                const pc = createPeerConnection(streamUser?.userId);
 
-                peerConnections.current.set(streamUser?.userId, peerConnection);
-
-
-                peerConnection.ontrack = (event: RTCTrackEvent<any>) => {
-                    const remoteStream = new MediaStream();
-                    event.streams[0].getTracks().forEach((track: MediaStreamTrack) => {
-                        remoteStream.addTrack(track);
-                    });
-                    console.log('RECEIVING REMOTE STREAM', remoteStream.toURL());
-                    setRemoteMediaStream(streamUser?.userId, remoteStream);
-                };
+                peerConnections.current.set(streamUser?.userId, pc);
 
 
-
-
-                peerConnection.onicecandidate = (event: RTCIceCandidateEvent<any>) => {
-                    const iceCandidate = event.candidate;
-                    if (iceCandidate) {
-                        emit('send-ice-candidate', {
-                            sessionId: sessionId!,
-                            sender: user?.id,
-                            receiver: streamUser?.userId,
-                            candidate: iceCandidate,
-                        });
-                    }
-                };
-
-
-
-                localStream?.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream!);
-                });
-
-                //_ Create offer and send to participant
                 try {
-                    const offerDescription = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offerDescription);
+                    if (localStreamRef.current === null) throw new Error('Local Stream not found');
+                    localStreamRef.current.getTracks().forEach(track => {
+                        pc.addTrack(track, localStreamRef.current!);
+                    });
+
+
+                    //_ Create offer and send to participant
+                    const offerDescription = await pc.createOffer();
+                    await pc.setLocalDescription(offerDescription);
                     emit('send-offer', {
                         sessionId: sessionId!,
                         sender: user?.id,
@@ -155,6 +207,8 @@ export const useWebRTC = () => {
                     });
                 } catch (error) {
                     console.error('Error creating or sending offer', error);
+                    closePeerConnection(streamUser?.userId);
+
                 }
 
             }
@@ -168,7 +222,7 @@ export const useWebRTC = () => {
     }, [establishPeerConnections]);
 
     useEffect(() => {
-        if (localStream) {
+        if (localStreamRef.current) {
             joiningStream();
         }
     }, [joiningStream]);
@@ -210,8 +264,6 @@ export const useWebRTC = () => {
 
 
 
-
-
     const handleReceiveOffer = useCallback(async ({ sender, receiver, offer }: {
         sender: string,
         receiver: string,
@@ -220,55 +272,27 @@ export const useWebRTC = () => {
         if (receiver !== user?.id) return;
 
         try {
-            let peerConnection = peerConnections.current.get(sender);
-            if (!peerConnection) {
-                peerConnection = new RTCPeerConnection(peerConstraints);
-                peerConnections.current.set(sender, peerConnection);
+            let pc = peerConnections.current.get(sender);
+            if (!pc) {
+                pc = createPeerConnection(sender);
 
-                peerConnection.ontrack = (event: RTCTrackEvent<any>) => {
-                    const remoteStream = new MediaStream();
-                    event.streams[0].getTracks().forEach((track: MediaStreamTrack) => {
-                        remoteStream.addTrack(track);
+                peerConnections.current.set(sender, pc);
 
-                        console.log('RECEIVING REMOTE STREAM🔥', remoteStream.toURL());
-                    });
-                    setRemoteMediaStream(sender, remoteStream);
-                };
+                const pending = pendingCandidates.current.get(sender) || [];
+                await Promise.all(pending.map(c => pc!.addIceCandidate(new RTCIceCandidate(c))));
+                pendingCandidates.current.delete(sender);
 
-                peerConnection.onicecandidate = (event: RTCIceCandidateEvent<any>) => {
-                    const iceCandidate = event.candidate;
-                    if (iceCandidate) {
-                        emit('send-ice-candidate', {
-                            sessionId: sessionId!,
-                            sender: receiver,
-                            receiver: sender,
-                            candidate: iceCandidate,
-                        });
-                    }
-                };
 
-                if (pendingCandidates.current.get(sender)) {
-                    pendingCandidates.current.get(sender)?.forEach(candidate => {
-                        if (!peerConnection) {
-                            console.log('🛑🛑🛑🛑 Peer Connection not found🛑🛑🛑🛑');
-                        }
-                        peerConnection!.addIceCandidate(new RTCIceCandidate(candidate));
-                    });
-                    pendingCandidates.current.delete(sender);
-                }
+                if (localStreamRef.current === null) throw new Error('Local Stream not found');
+                localStreamRef.current.getTracks().forEach(track => {
+                    pc!.addTrack(track, localStreamRef.current!);
+                });
             }
 
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
-            localStream?.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream!);
-            });
-
-
-
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
 
             emit('send-answer', {
                 sessionId: sessionId!,
@@ -300,7 +324,7 @@ export const useWebRTC = () => {
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
             }
         } catch (error) {
-            console.log('Error receiving answer', error);
+            console.error('Error receiving answer', error);
         }
     }, []);
 
@@ -314,15 +338,13 @@ export const useWebRTC = () => {
     }) => {
         if (receiver !== user?.id) return;
 
-        const peerConnection = peerConnections.current.get(sender);
-        if (peerConnection) {
-            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        const pc = peerConnections.current.get(sender);
+        if (pc) {
+            pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(e => console.warn('Error adding ice candidate', e));
         }
         else {
-            if (!pendingCandidates.current.get(sender)) {
-                pendingCandidates.current.set(sender, []);
-            }
-            pendingCandidates.current.get(sender)?.push(candidate);
+            const pending = pendingCandidates.current.get(sender) || [];
+            pendingCandidates.current.set(sender, [...pending, candidate]);
         }
     }, []);
 
@@ -369,25 +391,13 @@ export const useWebRTC = () => {
             off('receive-offer');
             off('receive-answer');
             off('receive-ice-candidate');
-        };
-    }, [handleGetAllParticipants, handleNewParticipant, handleParticipantLeft, handleParticipantUpdate, handleReceiveOffer, handleReceiveAnswer, handleReceiveIceCandidate]);
 
 
-    useEffect(() => {
-        return () => {
-            if (localStreamRef.current) {
-                console.log("🔴🔴🔴🔴 Cleaning Local Stream now 🔴🔴🔴🔴");
-                localStreamRef.current.getTracks().forEach(track => {
-                    track.stop(); // Stop each track properly
-                });
-                localStreamRef.current = null;
-            }
-            peerConnections.current.forEach((pc) => pc.close());
+            peerConnections.current.forEach((_, userId) => closePeerConnection(userId));
             peerConnections.current.clear();
             pendingCandidates.current.clear();
-        }
-    }, [])
-
+        };
+    }, [handleGetAllParticipants, handleNewParticipant, handleParticipantLeft, handleParticipantUpdate, handleReceiveOffer, handleReceiveAnswer, handleReceiveIceCandidate]);
 
 
     return {

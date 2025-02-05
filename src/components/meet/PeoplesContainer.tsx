@@ -33,7 +33,6 @@ const PeoplesContainer: FC<PeoplesContainerProps> = ({ people, containerDimensio
                             className='justify-center items-center rounded-[10px] bg-[#2e3030] overflow-hidden mx-1 my-1 border-[#95c9ff]'
                             style={[
                                 // person?.speaking ? { borderWidth: 3, } : null,
-                                person?.micOn ? { borderWidth: 3, } : null,
                                 Array.isArray(gridStyle) ? gridStyle[index] : gridStyle,
                             ]}
                         >
@@ -41,7 +40,7 @@ const PeoplesContainer: FC<PeoplesContainerProps> = ({ people, containerDimensio
                                 <RTCView
                                     mirror={true}
                                     objectFit='cover'
-                                    streamURL={person?.mediaStream?.toURL()}
+                                    streamURL={person?.mediaStream ? person?.mediaStream?.toURL() : ''}
                                     style={{
                                         width: '100%',
                                         height: '100%',
