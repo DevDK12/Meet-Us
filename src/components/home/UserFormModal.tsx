@@ -2,11 +2,19 @@ import { FC, useEffect, useState } from 'react'
 import { View, Modal, TextInput, TouchableOpacity, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import CustomText from '../ui/CustomText'
 import { RFValue } from 'react-native-responsive-fontsize'
-import { pickImage } from '../../utils/Helpers'
+import { pickImage, uploadToCloudinary } from '../../utils/Helpers'
 import { ImageUp } from 'lucide-react-native'
 import { useUserStore } from '../../services/userStore'
 import { v4 as uuidv4 } from 'uuid'
 import 'react-native-get-random-values';
+import { CLOUD_NAME, UPLOAD_PRESET } from '../../services/config'
+
+
+
+
+
+
+
 
 type UserFormModalProps = {
     isVisible: boolean
@@ -30,27 +38,45 @@ const UserFormModal: FC<UserFormModalProps> = ({ isVisible, onClose }) => {
     }, [isVisible])
 
 
-    const handleSave = () => {
-        if (!name || !profilePhotoUrl) {
-            Alert.alert('Enter your name and profile photo');
+    const handleSave = async () => {
+        if (!name) {
+            Alert.alert('Enter your name first');
             return;
         }
+
+        let uploadUrl;
+        if (profilePhotoUrl) {
+            uploadUrl = await uploadToCloudinary(profilePhotoUrl, CLOUD_NAME!, UPLOAD_PRESET!);
+        }
+
         setUser({
             id: uuidv4(),
             name,
-            profilePhotoUrl,
+            profilePhotoUrl: uploadUrl,
         })
+
         onClose();
     }
 
     const handleImageUpload = async () => {
         // await requestPhotoLibraryPermission();
-        pickImage((image) => {
+        pickImage(async (image) => {
             console.log('image', image)
-            if (image.uri)
+            try {
+                if (!image || !image.uri) throw new Error('Image not found');
+
                 setProfilePhotoUrl(image.uri);
+            }
+            catch (err) {
+                console.log('Error in uploading image:', err)
+            }
+
         })
     }
+
+
+
+
 
     return (
         <Modal

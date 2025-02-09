@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import {
   launchImageLibrary,
   Asset,
@@ -11,6 +11,8 @@ import {
   request,
   Permission,
 } from 'react-native-permissions';
+import RNFS, { readFile } from 'react-native-fs';
+
 
 
 export const calculateFinalPos = (x: number, y: number, containerWidth: number, containerHeight: number) => {
@@ -24,7 +26,8 @@ export const calculateFinalPos = (x: number, y: number, containerWidth: number, 
   };
 
   type TDirections = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
-  const closestCorner = Object.keys(distances).reduce((a, b) => distances[a] < distances[b] ? a : b) as TDirections;
+
+  const closestCorner = (Object.keys(distances) as TDirections[]).reduce((a, b) => distances[a] < distances[b] ? a : b);
 
   let finalX = 0;
   let finalY = 0;
@@ -174,4 +177,44 @@ export const sessionConstraints = {
     OfferToReceiveVideo: true,
     VoiceActivityDetection: true,
   },
+};
+
+
+
+
+export const uploadToCloudinary = async (fileUri: string, CLOUD_NAME: string, UPLOAD_PRESET: string) => {
+
+  try {
+    const fileData = await readFile(fileUri, 'base64');
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('file', `data:image/jpeg;base64,${fileData}`);
+    formData.append('tags', 'mobile_upload');
+
+    // Upload to Cloudinary
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.secure_url) {
+      console.log('Upload successful: ', data.secure_url);
+      return data.secure_url;
+    }
+    return null;
+  } catch (error) {
+    Alert.alert('Upload Failed', 'Error uploading image to Cloudinary');
+    console.error('Upload error:', error);
+    return null;
+  }
 };

@@ -186,11 +186,23 @@ const PrepareMeetScreen = () => {
                             objectFit='cover'
                         />
                             :
-                            <Image
-                                source={{ uri: user?.profilePhotoUrl }}
-                                className='w-[40px] h-[40px] rounded-full self-center'
-                            />
+                            <View
+                                className='w-[40px] h-[40px] bg-[#ff5100] rounded-full justify-center items-center self-center'
+                            >
+                                {user?.profilePhotoUrl ?
+                                    <Image
+                                        source={{ uri: user?.profilePhotoUrl }}
+                                        className='w-[40px] h-[40px] rounded-full self-center'
+                                    /> :
+                                    <CustomText
+                                        color='white'
+                                        fontSize={14}
+                                    >{user?.name?.charAt(0)}</CustomText>
+                                }
+                            </View>
                         }
+
+
 
                         <View className='flex-row justify-center gap-2 absolute bottom-2 w-full mt-2'>
                             <MeetIconBtn

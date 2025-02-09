@@ -5,7 +5,7 @@ import { mmkvStorage } from './storage';
 export type TUser = {
     id: string;
     name: string;
-    profilePhotoUrl: string;
+    profilePhotoUrl?: string | null;
 }
 interface IUserState {
     user: TUser | null;

@@ -35,7 +35,7 @@ type TPayload = {
     sessionId?: string,
     userId?: string,
     name?: string,
-    photo?: string,
+    photo?: string | null,
     micOn?: boolean,
     videoOn?: boolean,
     sender?: string,

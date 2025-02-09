@@ -86,8 +86,8 @@ const UserMeetBox: FC<UserMeetBoxProps> = ({ containerDimensions, mediaStream })
                     [{
                         width: '24%',
                         height: '22%',
-                        zIndex: 110,
-                        elevation: 10,
+                        zIndex: 99,
+                        elevation: 6,
                         shadowOffset: { width: 1, height: 1 },
                         shadowOpacity: 0.6,
                         shadowRadius: 16,
@@ -99,7 +99,7 @@ const UserMeetBox: FC<UserMeetBoxProps> = ({ containerDimensions, mediaStream })
                 {
                     mediaStream && videoOn ? <RTCView
                         streamURL={mediaStream?.toURL()}
-                        style={{ width: '100%', height: '100%' }}
+                        style={{ width: '100%', height: '100%', zIndex: 99 }}
                         mirror={true}
                         objectFit='cover'
                     /> :
