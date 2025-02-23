@@ -6,8 +6,8 @@ import { navigate } from '../utils/NavigationUtils'
 
 const SplashScreen = () => {
 
-    useEffect(()=>{
-        const timer = setTimeout(()=>{
+    useEffect(() => {
+        const timer = setTimeout(() => {
             navigate('HomeScreen');
         }, 1200);
 
@@ -16,10 +16,10 @@ const SplashScreen = () => {
 
     return (
         <View className='bg-white flex-1 items-center justify-center'>
-            <Image 
-                source={require('../assets/images/g.png')}
+            <Image
+                source={require('../assets/icons/splash-icon-dark.png')}
                 style={{
-                    width: screenWidth * 0.7, 
+                    width: screenWidth * 0.7,
                     height: screenHeight * 0.7,
                     resizeMode: 'contain'
                 }}
