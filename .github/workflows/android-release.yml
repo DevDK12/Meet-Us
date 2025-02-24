@@ -1,0 +1,119 @@
+name: Production Release
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Debug Secrets
+        run: |
+          echo "CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}"
+          echo "CLOUD_NAME: ${{ secrets.CLOUD_NAME }}"
+          echo "PRESET: ${{ secrets.PRESET }}"
+          echo "HOST: ${{ secrets.HOST }}"
+
+      - name: Create .env file
+        run: |
+          echo "CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}" > .env
+          echo "CLOUD_NAME=${{ secrets.CLOUD_NAME }}" >> .env
+          echo "PRESET=${{ secrets.PRESET }}" >> .env
+          echo "HOST=${{ secrets.HOST }}" >> .env
+
+      - name: Verify .env file location
+        run: |
+          cat .env
+
+      - name: Generate React Native Bundle
+        run: |
+          npx react-native bundle --platform android --dev false \
+          --entry-file index.js \
+          --bundle-output android/app/src/main/assets/index.android.bundle \
+          --assets-dest android/app/src/main/res
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v -keystore android/app/release.keystore \
+          -alias ${{ secrets.KEY_ALIAS }} -keyalg RSA -keysize 2048 -validity 10000 \
+          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+          -keypass ${{ secrets.KEY_PASSWORD }} \
+          -dname "CN=Android Release, OU=Mobile, O=YourCompany, L=YourCity, S=YourState, C=YourCountry"
+        shell: bash
+
+      - name: Build Release APK
+        working-directory: android
+        env:
+          KEYSTORE_FILE: android/app/release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/app-release.aab
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: ./release
+
+      - name: Verify Downloaded APK
+        run: |
+          ls -R ./release
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Production Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          body: |
+            Production release automatically generated
+            - Commit: ${{ github.sha }}
+            - Date: ${{ github.event.head_commit.timestamp }}
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./release/apk/release/app-release.apk
+          asset_name: app-release.apk
+          asset_content_type: application/vnd.android.package-archive
